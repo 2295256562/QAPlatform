@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/e421083458/golang_common/lib"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
@@ -77,6 +78,7 @@ func GetGinTraceContext(c *gin.Context) *lib.TraceContext {
 			return tc
 		}
 	}
+	fmt.Println(lib.NewTrace(), "1212")
 	return lib.NewTrace()
 }
 
@@ -85,12 +87,9 @@ func GetTraceContext(c context.Context) *lib.TraceContext {
 	if c == nil {
 		return lib.NewTrace()
 	}
-	traceContext:=c.Value("trace")
+	traceContext := c.Value("trace")
 	if tc, ok := traceContext.(*lib.TraceContext); ok {
 		return tc
 	}
 	return lib.NewTrace()
 }
-
-
-

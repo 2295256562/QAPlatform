@@ -26,7 +26,7 @@ type Response struct {
 	ErrorMsg  string       `json:"errmsg"`
 	Data      interface{}  `json:"data"`
 	TraceId   interface{}  `json:"trace_id"`
-	Stack     interface{}  `json:"stack"`
+	//Stack     interface{}  `json:"stack"`
 }
 
 func ResponseError(c *gin.Context, code ResponseCode, err error) {
@@ -36,7 +36,7 @@ func ResponseError(c *gin.Context, code ResponseCode, err error) {
 	if traceContext != nil {
 		traceId = traceContext.TraceId
 	}
-	resp := &Response{ErrorCode: code, ErrorMsg: err.Error(), Data: "", TraceId: traceId}
+	resp := &Response{ErrorCode: code, ErrorMsg: err.Error(), Data: make(map[string]interface{}), TraceId: traceId}
 	c.JSON(200, resp)
 	response, _ := json.Marshal(resp)
 	c.Set("response", string(response))

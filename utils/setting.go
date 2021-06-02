@@ -27,16 +27,16 @@ func init() {
 	LoadData(file)
 }
 
-func LoadServer(file *ini.File)  {
+func LoadServer(file *ini.File) {
 	AppMode = file.Section("server").Key("AppMode").MustString("debug")
 	HttpPort = file.Section("server").Key("HttpPort").MustString(":3000")
 }
 
-func LoadData(file *ini.File)  {
+func LoadData(file *ini.File) {
 	Db = file.Section("database").Key("Db").MustString("mysql")
 	DbHost = file.Section("database").Key("DbHost").MustString("113.31.147.158")
 	DbPort = file.Section("database").Key("DbPort").MustString("3306")
-	DbName = file.Section("database").Key("DbUser").MustString("peishan")
+	DbUser = file.Section("database").Key("DbUser").MustString("peishan")
 	DbPassword = file.Section("database").Key("DbPassword").MustString("1234")
 	DbName = file.Section("database").Key("DbName").MustString("QAPlatform")
 }

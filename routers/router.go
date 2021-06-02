@@ -10,11 +10,11 @@ import (
 func InitRouter() {
 	gin.SetMode(utils.AppMode)
 	r := gin.Default()
-	r.Use(middleware.JwtToken())
 	V1 := r.Group("/api/v1")
+	V1.Use(middleware.RequestLog())
 	{
 		V1.POST("/login", api.Login)
-		V1.Use(middleware.RequestLog())
+		V1.Use(middleware.JwtToken())
 	}
 	r.Run(utils.HttpPort)
 }

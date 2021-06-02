@@ -13,7 +13,7 @@ type User struct {
 
 	UserName string `json:"user_name"`
 	Password string `json:"password"`
-	Role     string `json:"role"`
+	Role     int    `json:"role"`
 }
 
 // 检查用户名是否存在
@@ -45,11 +45,12 @@ func ListUser(pageSize, pageNum int, maps interface{}) (users []User) {
 	return
 }
 
-func Login(username, password string) {
-	var user User
-	db.Where("username = ?",username).First(&user)
-	if user.Id == 0{
+func Login(username, password string) (user User, flag bool) {
+	db.Where("username = ?", username).First(&user)
+	if user.Id == 0 {
+		return user, false
 	}
+	return user, true
 }
 
 // 密码加密

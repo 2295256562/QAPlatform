@@ -18,7 +18,8 @@ type Model struct {
 }
 
 func InitDb() {
-	db, err = gorm.Open(utils.Db, fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
+	fmt.Println("用户名 = ", utils.DbUser)
+	db, err = gorm.Open(utils.Db, fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		utils.DbUser,
 		utils.DbPassword,
 		utils.DbHost,
