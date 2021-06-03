@@ -19,7 +19,7 @@ type User struct {
 	Role     int    `json:"role"`
 }
 
-// 检查用户名是否存在
+// CheckUsernameExist 检查用户名是否存在
 func CheckUsernameExist(username string) bool {
 	var user User
 	db.Select("id").Where("user_name = ?", username).First(&user)
@@ -29,7 +29,7 @@ func CheckUsernameExist(username string) bool {
 	return false
 }
 
-// 创建用户
+// CreateUser 创建用户
 func CreateUser(data *User) bool {
 	data.Password = ScryptPw(data.Password)
 	err := db.Create(&data).Error
@@ -39,7 +39,7 @@ func CreateUser(data *User) bool {
 	return true
 }
 
-// 查询用户列表
+// ListUser 查询用户列表
 func ListUser(pageSize, pageNum int, maps interface{}) (users []User) {
 	err := db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&users).Error
 	if err != nil && err != gorm.ErrRecordNotFound {

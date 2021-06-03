@@ -1,6 +1,6 @@
 package model
 
 type ProjectToUser struct {
-	UserId      int `json:"user_id"`
-	ProjectUser int `json:"project_user"`
+	UserId    int `json:"user_id"`
+	ProjectId int `json:"project_id"`
 }

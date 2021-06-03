@@ -18,6 +18,8 @@ func InitRouter() {
 		V1.POST("/register", api.Register)
 		V1.Use(middleware.JWTAuthMiddleware())
 		V1.POST("/add_project", api.CreateProject)
+		V1.GET("/project_list", api.ProjectList)
+		V1.GET("/project_detail", api.ProjectDetail)
 	}
 	r.Run(utils.HttpPort)
 }

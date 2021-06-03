@@ -18,6 +18,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/ugorji/go v1.2.6 // indirect
+	github.com/unknwon/com v1.0.1 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/sys v0.0.0-20210531225629-47163c9f4e4f // indirect
 	golang.org/x/text v0.3.6 // indirect
