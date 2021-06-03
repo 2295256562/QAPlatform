@@ -12,9 +12,12 @@ func InitRouter() {
 	r := gin.Default()
 	V1 := r.Group("/api/v1")
 	V1.Use(middleware.RequestLog())
+	r.Use(middleware.Cors())
 	{
 		V1.POST("/login", api.Login)
-		V1.Use(middleware.JwtToken())
+		V1.POST("/register", api.Register)
+		V1.Use(middleware.JWTAuthMiddleware())
+		V1.POST("/add_project", api.CreateProject)
 	}
 	r.Run(utils.HttpPort)
 }

@@ -2,10 +2,13 @@ package model
 
 import (
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm"
 	"golang.org/x/crypto/scrypt"
 	"log"
+	"time"
 )
 
 type User struct {
@@ -19,7 +22,7 @@ type User struct {
 // 检查用户名是否存在
 func CheckUsernameExist(username string) bool {
 	var user User
-	db.Select("id").Where("name = ?", username).First(&user)
+	db.Select("id").Where("user_name = ?", username).First(&user)
 	if user.Id > 0 {
 		return true
 	}
@@ -27,13 +30,13 @@ func CheckUsernameExist(username string) bool {
 }
 
 // 创建用户
-func CreateUser(data *User) int {
+func CreateUser(data *User) bool {
 	data.Password = ScryptPw(data.Password)
 	err := db.Create(&data).Error
 	if err != nil {
-		return 0
+		return false
 	}
-	return 1
+	return true
 }
 
 // 查询用户列表
@@ -45,12 +48,16 @@ func ListUser(pageSize, pageNum int, maps interface{}) (users []User) {
 	return
 }
 
-func Login(username, password string) (user User, flag bool) {
-	db.Where("username = ?", username).First(&user)
-	if user.Id == 0 {
-		return user, false
+func Login(username, password string) (user User, err error) {
+	err = db.Where("user_name = ?", username).First(&user).Error
+
+	if err != nil {
+		return user, errors.New(fmt.Sprint("查询不到此用户"))
 	}
-	return user, true
+	if user.Password == ScryptPw(password) {
+		return user, nil
+	}
+	return user, errors.New(fmt.Sprint("用户名或密码错误"))
 }
 
 // 密码加密
@@ -65,4 +72,14 @@ func ScryptPw(password string) string {
 	}
 	fpm := base64.StdEncoding.EncodeToString(HashPw)
 	return fpm
+}
+
+func (user *User) BeforeCreate(scope *gorm.Scope) error {
+	scope.SetColumn("CreatedTime", time.Now().Unix())
+	return nil
+}
+
+func (user *User) BeforeUpdate(scope *gorm.Scope) error {
+	scope.SetColumn("ModifiedTime", time.Now().Unix())
+	return nil
 }
