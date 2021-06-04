@@ -83,6 +83,44 @@ func GetProjectDetail(id int) (projectDetail ProjectDetail) {
 	return
 }
 
+func EditProject(id int, data *AddProject) bool {
+	project := &Project{
+		Name:       data.Name,
+		Remake:     data.Remake,
+		ModifiedBy: data.ModifiedBy,
+	}
+
+	// 修改project
+	err := db.Table("project").Where("id = ?", id).Updates(project).Error
+	if err != nil {
+		return false
+	}
+
+	// 修改project_user表
+	db.Table("project_user").Debug().Unscoped().Where("project_id = ?", id).Delete(&ProjectToUser{})
+	for i := range data.Members {
+		err := db.Table("project_user").Create(&ProjectToUser{
+			UserId:    data.Members[i],
+			ProjectId: id,
+		}).Error
+
+		if err != nil {
+			return false
+		}
+	}
+
+	return true
+}
+
+func DelProject(id int) bool {
+	err := db.Table("project").Where("id = ?", id).Update("state", 0).Error
+
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func (project *Project) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("CreatedTime", time.Now().Unix())
 	return nil

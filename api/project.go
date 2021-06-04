@@ -42,6 +42,7 @@ func ProjectList(c *gin.Context) {
 	name := c.Query("name")
 	maps := make(map[string]interface{})
 
+	maps["state"] = 1
 	if name != "" {
 		maps["name"] = name
 	}
@@ -61,4 +62,43 @@ func ProjectDetail(c *gin.Context) {
 	}
 	detail := model.GetProjectDetail(id)
 	utils.ResponseSuccess(c, detail)
+}
+
+func ProjectEdit(c *gin.Context) {
+	var data *model.AddProject
+
+	id := com.StrTo(c.Param("id")).MustInt()
+	err := c.ShouldBindJSON(&data)
+	userId := c.MustGet("id").(int)
+	data.ModifiedBy = userId
+
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("参数异常")))
+		return
+	}
+
+	exist := model.CheckProjectExist(data.Name)
+	if exist {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("项目名称重复，请更换名称")))
+		return
+	}
+
+	flag := model.EditProject(id, data)
+	if flag == false {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("修改失败")))
+		return
+	}
+	utils.ResponseSuccess(c, "修改成功")
+	return
+}
+
+func ProjectDel(c *gin.Context) {
+	id := com.StrTo(c.Param("id")).MustInt()
+	flag := model.DelProject(id)
+	if flag == false {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("删除失败")))
+		return
+	}
+	utils.ResponseSuccess(c, "删除成功")
+	return
 }

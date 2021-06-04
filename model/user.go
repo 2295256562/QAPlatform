@@ -19,6 +19,11 @@ type User struct {
 	Role     int    `json:"role"`
 }
 
+type UserIDAndUserName struct {
+	Id       int    `json:"id"`
+	UserName string `json:"user_name"`
+}
+
 // CheckUsernameExist 检查用户名是否存在
 func CheckUsernameExist(username string) bool {
 	var user User
@@ -72,6 +77,14 @@ func ScryptPw(password string) string {
 	}
 	fpm := base64.StdEncoding.EncodeToString(HashPw)
 	return fpm
+}
+
+// 根据角色返回用户列表
+func UserListByRole(role int) (users []UserIDAndUserName, err error) {
+	if err := db.Table("user").Select("id, user_name").Where("role = ?", role).Scan(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (user *User) BeforeCreate(scope *gorm.Scope) error {
