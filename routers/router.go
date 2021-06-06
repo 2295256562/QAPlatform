@@ -36,6 +36,8 @@ func InitRouter() {
 
 		// 接口管理接口
 		V1.POST("/inter_add", api.AddInter)
+		V1.GET("/inter_list", api.ListInterByModuleId)
+		V1.GET("/inters", api.InterfaceList)
 	}
 	r.Run(utils.HttpPort)
 }

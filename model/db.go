@@ -12,7 +12,7 @@ var db *gorm.DB
 var err error
 
 type Model struct {
-	Id           int `gorm:"primary_key json:"id""`
+	Id           int `gorm:"primary_key" json:"id"`
 	CreatedTime  int `json:"created_time"`
 	ModifiedTime int `json:"modified_time"`
 }

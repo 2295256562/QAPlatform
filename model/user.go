@@ -65,7 +65,7 @@ func Login(username, password string) (user User, err error) {
 	return user, errors.New(fmt.Sprint("用户名或密码错误"))
 }
 
-// 密码加密
+// ScryptPw 密码加密
 func ScryptPw(password string) string {
 	const KeyLen = 10
 	salt := make([]byte, 8)
@@ -79,7 +79,7 @@ func ScryptPw(password string) string {
 	return fpm
 }
 
-// 根据角色返回用户列表
+// UserListByRole 根据角色返回用户列表
 func UserListByRole(role int) (users []UserIDAndUserName, err error) {
 	if err := db.Table("user").Select("id, user_name").Where("role = ?", role).Scan(&users).Error; err != nil {
 		return nil, err

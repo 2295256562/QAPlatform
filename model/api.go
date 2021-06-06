@@ -1,5 +1,10 @@
 package model
 
+import (
+	"github.com/jinzhu/gorm"
+	"time"
+)
+
 type Interface struct {
 	Model
 
@@ -12,6 +17,7 @@ type Interface struct {
 	ModuleId   int    `json:"module_id"`
 }
 
+// InterfaceToUser 接口人员表, role 0 代表测试，1代表开发
 type InterfaceToUser struct {
 	Id          int `json:"id"`
 	InterfaceId int `json:"interface_id"`
@@ -26,7 +32,14 @@ type InterfaceAdd struct {
 	Tester  []int `json:"tester"`
 }
 
-// 添加接口
+type InterfaceList struct {
+	Interface
+	UserName    string `json:"user_name"`
+	ProjectName string `json:"project_name"`
+	ModuleName  string `json:"module_name"`
+}
+
+// AddApi 添加接口
 func AddApi(data *InterfaceAdd) error {
 	tx := db.Begin()
 	inface := &Interface{
@@ -76,7 +89,7 @@ func AddApi(data *InterfaceAdd) error {
 	return nil
 }
 
-// 检查接口名称是否存在
+// CheckInterfaceNameExists 检查接口名称是否存在
 func CheckInterfaceNameExists(name string, projectId int) (flag bool, err error) {
 	var inter Interface
 	err = db.Table("interface").Select("id").Where("name = ? and project_id = ?", name, projectId).First(&inter).Error
@@ -87,4 +100,42 @@ func CheckInterfaceNameExists(name string, projectId int) (flag bool, err error)
 		return false, nil
 	}
 	return true, nil
+}
+
+// FindListByModuleId 根据模块id查询模块下的接口列表
+func FindListByModuleId(pageSize, pageNum, moduleId int) (apiList []InterfaceList, count int, err error) {
+	err = db.Offset(pageNum-1).Limit(pageSize).Raw("SELECT i.*,u.user_name,p.`name` AS project_name,m.NAME AS module_name FROM interface i LEFT JOIN `user` u"+
+		" ON u.id =i.created_by LEFT JOIN project p ON p.id = i.project_id LEFT JOIN module m ON m.id = i.module_id WHERE "+
+		"i.state = 1 and i.module_id = ? GROUP BY i.id DESC", moduleId).Scan(&apiList).Error
+	db.Table("interface").Where("state = 1 and module_id = ?", moduleId).Count(&count)
+	//err = db.Table("interface").Where("module_id = ? and state = 1", moduleId).Count(&count).Scan(&apiList).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return apiList, count, nil
+}
+
+// InterList 查询项目下的接口列表
+func InterList(pageSize, pageNum, projectId int) (list []InterfaceList, count int, err error) {
+	err = db.Offset(pageNum-1).Limit(pageSize).Raw("SELECT i.*,u.user_name,p.`name` AS project_name,m.NAME AS module_name FROM interface i LEFT JOIN `user` u"+
+		" ON u.id =i.created_by LEFT JOIN project p ON p.id = i.project_id LEFT JOIN module m ON m.id = i.module_id WHERE "+
+		"i.state = 1 and i.project_id = ? GROUP BY i.id DESC", projectId).Scan(&list).Error
+	db.Table("interface").Where("state = 1 and project_id = ?", projectId).Count(&count)
+	//err = db.Table("interface").Where("module_id = ? and state = 1", projectId).Count(&count).Scan(&list).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, count, nil
+}
+
+//func InterDetail(apiId int)()
+
+func (project *Interface) BeforeCreate(scope *gorm.Scope) error {
+	scope.SetColumn("CreatedTime", time.Now().Unix())
+	return nil
+}
+
+func (project *Interface) BeforeUpdate(scope *gorm.Scope) error {
+	scope.SetColumn("ModifiedTime", time.Now().Unix())
+	return nil
 }
