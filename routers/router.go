@@ -10,9 +10,9 @@ import (
 func InitRouter() {
 	gin.SetMode(utils.AppMode)
 	r := gin.Default()
+	r.Use(middleware.Cors())
 	V1 := r.Group("/api/v1")
 	V1.Use(middleware.RequestLog())
-	r.Use(middleware.Cors())
 	{
 		// 用户相关接口
 		V1.POST("/login", api.Login)
@@ -26,6 +26,7 @@ func InitRouter() {
 		V1.GET("/project_detail", api.ProjectDetail)
 		V1.PUT("/project/:id", api.ProjectEdit)
 		V1.DELETE("/project/:id", api.ProjectDel)
+		V1.GET("/projects", api.Projects)
 
 		// 模块接口
 		V1.GET("/module_list", api.ModelList)
@@ -38,6 +39,8 @@ func InitRouter() {
 		V1.POST("/inter_add", api.AddInter)
 		V1.GET("/inter_list", api.ListInterByModuleId)
 		V1.GET("/inters", api.InterfaceList)
+		V1.GET("/inter", api.InterDetail)
+		V1.POST("/inter", api.InterEdit)
 	}
 	r.Run(utils.HttpPort)
 }

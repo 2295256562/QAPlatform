@@ -20,7 +20,7 @@ type User struct {
 }
 
 type UserIDAndUserName struct {
-	Id       int    `json:"id"`
+	UserId   int    `json:"user_id"`
 	UserName string `json:"user_name"`
 }
 
@@ -81,7 +81,7 @@ func ScryptPw(password string) string {
 
 // UserListByRole 根据角色返回用户列表
 func UserListByRole(role int) (users []UserIDAndUserName, err error) {
-	if err := db.Table("user").Select("id, user_name").Where("role = ?", role).Scan(&users).Error; err != nil {
+	if err := db.Table("user").Select("id as user_id, user_name").Where("role = ?", role).Scan(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

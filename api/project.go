@@ -35,7 +35,7 @@ func CreateProject(c *gin.Context) {
 	return
 }
 
-// ProjectList 获取项目列表
+// ProjectList 获取项目列表带分页
 func ProjectList(c *gin.Context) {
 	page := com.StrTo(c.DefaultQuery("page", "1")).MustInt()
 	pageSize := com.StrTo(c.DefaultQuery("page_size", "10")).MustInt()
@@ -52,6 +52,18 @@ func ProjectList(c *gin.Context) {
 	data["rows"] = list
 	data["count"] = count
 	utils.ResponseSuccess(c, data)
+	return
+}
+
+// 获取项目列表不带分页
+func Projects(c *gin.Context) {
+	projects, err := model.GetProjects()
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("参数异常")))
+		return
+	}
+	utils.ResponseSuccess(c, projects)
+	return
 }
 
 func ProjectDetail(c *gin.Context) {

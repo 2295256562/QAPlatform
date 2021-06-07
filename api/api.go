@@ -84,3 +84,52 @@ func InterfaceList(c *gin.Context) {
 	utils.ResponseSuccess(c, data)
 	return
 }
+
+func InterDetail(c *gin.Context) {
+	id := com.StrTo(c.Query("id")).MustInt()
+
+	if id < 1 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("接口id不可为空")))
+		return
+	}
+	detail, err := model.InterDetail(id)
+
+	if detail.Id == 0 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("接口不存在")))
+		return
+	}
+
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("接口详情出错")))
+		return
+	}
+	utils.ResponseSuccess(c, detail)
+	return
+}
+
+func InterDel(c *gin.Context) {
+	id := com.StrTo(c.Query("id")).MustInt()
+	fmt.Println(id)
+	// TODO 查询当前接口下是否存在用例，如果有用例不可删除
+}
+
+func InterEdit(c *gin.Context) {
+	var data *model.InterfaceAdd
+	err := c.ShouldBindJSON(&data)
+
+	userId := c.MustGet("id").(int)
+	data.CreatedBy = userId
+
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("参数有误")))
+		return
+	}
+	err = model.AddApi(data)
+
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("修改接口失败")))
+		return
+	}
+	utils.ResponseSuccess(c, "修改接口成功")
+	return
+}

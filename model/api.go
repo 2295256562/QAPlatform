@@ -39,6 +39,20 @@ type InterfaceList struct {
 	ModuleName  string `json:"module_name"`
 }
 
+type InterfaceUsersDetail struct {
+	UserName string `json:"user_name"`
+	UserId   string `json:"user_id"`
+}
+
+type InterfaceDetail struct {
+	Interface
+
+	ProjectName string                 `json:"project_name"`
+	ModuleName  string                 `json:"module_name"`
+	Develop     []InterfaceUsersDetail `json:"develop"`
+	Tester      []InterfaceUsersDetail `json:"tester"`
+}
+
 // AddApi 添加接口
 func AddApi(data *InterfaceAdd) error {
 	tx := db.Begin()
@@ -128,7 +142,73 @@ func InterList(pageSize, pageNum, projectId int) (list []InterfaceList, count in
 	return list, count, nil
 }
 
-//func InterDetail(apiId int)()
+// 接口详情
+func InterDetail(apiId int) (detail InterfaceDetail, err error) {
+	err = db.Raw("select i.*, p.name as project_name, m.name as module_name from interface i left join project p on i.project_id = p.id left join module m"+
+		" on i.module_id = m.id where i.id = ? and i.state = 1", apiId).Scan(&detail).Error
+
+	err = db.Raw("select i.user_id, u.user_name from interface_user i left join user u on i.user_id = u.id where"+
+		" i.role = 1 and interface_id = ?", apiId).Scan(&detail.Develop).Error
+
+	err = db.Raw("select i.user_id, u.user_name from interface_user i left join user u on i.user_id = u.id where"+
+		" i.role = 0 and interface_id = ?", apiId).Scan(&detail.Tester).Error
+	return
+}
+
+// 修改接口
+func InterUpdate(data *InterfaceAdd) error {
+	tx := db.Begin()
+	inter := &Interface{
+		Name:      data.Name,
+		Method:    data.Method,
+		Url:       data.Url,
+		CreatedBy: data.CreatedBy,
+		ProjectId: data.ProjectId,
+		ModuleId:  data.ModuleId,
+	}
+	if err := tx.Table("interface").Where("id = ?", data.Id).Update(inter).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 删除人员重新插入
+	if err := tx.Table("interface_user").Where("project_id", data.ProjectId).Unscoped().Delete(inter).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	// 存储开发人员
+	for i := range data.Develop {
+		err := tx.Table("interface_user").Create(&InterfaceToUser{
+			InterfaceId: inter.Id,
+			UserId:      data.Develop[i],
+			Role:        1,
+		}).Error
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// 存储测试人员
+	for i := range data.Tester {
+		err := tx.Table("interface_user").Create(&InterfaceToUser{
+			InterfaceId: inter.Id,
+			UserId:      data.Tester[i],
+			Role:        0,
+		}).Error
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
+}
 
 func (project *Interface) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("CreatedTime", time.Now().Unix())

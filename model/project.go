@@ -14,6 +14,11 @@ type Project struct {
 	ModifiedBy int    `json:"modified_by"`
 }
 
+type ProjectList struct {
+	Project
+
+	CreatedUser string `json:"created_user"`
+}
 type AddProject struct {
 	Project
 	Members []int `json:"members"`
@@ -29,6 +34,11 @@ type ProjectDetail struct {
 	Name    string            `json:"name"`
 	Remake  string            `json:"remake"`
 	Members []ProjectUserList `json:"members"`
+}
+
+type Projects struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 // CheckProjectExist 校验项目名称是否存在
@@ -63,8 +73,16 @@ func CreateProject(data *AddProject) bool {
 	return true
 }
 
-func GetProjectList(pageSize, pageNum int, maps interface{}) (projects []Project, count int) {
-	err := db.Table("project").Where(maps).Count(&count).Offset(pageNum - 1).Limit(pageSize).Find(&projects).Error
+func GetProjectList(pageSize, pageNum int, maps interface{}) (projects []ProjectList, count int) {
+	err := db.Table("project").Select("project.*, user.user_name as created_user").Where(maps).Count(&count).Joins("left join user on user.id = project.created_by").Offset((pageNum - 1) * pageSize).Limit(pageSize).Find(&projects).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return
+	}
+	return
+}
+
+func GetProjects() (projects []Projects, err error) {
+	err = db.Table("project").Select("id, name").Where("state = 1").Scan(&projects).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return
 	}
