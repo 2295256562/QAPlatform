@@ -21,11 +21,7 @@ func AddInter(c *gin.Context) {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("参数有误")))
 		return
 	}
-	flag, err := model.CheckInterfaceNameExists(data.Name, data.ProjectId)
-	if err != nil {
-		utils.ResponseError(c, 500, errors.New(fmt.Sprint("校验接口名称是否存在报错")))
-		return
-	}
+	flag := model.CheckInterfaceNameExists(data.Name, data.ProjectId)
 	if flag {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("同项目类接口名称不可重复")))
 		return
@@ -118,13 +114,13 @@ func InterEdit(c *gin.Context) {
 	err := c.ShouldBindJSON(&data)
 
 	userId := c.MustGet("id").(int)
-	data.CreatedBy = userId
+	data.ModifiedBy = userId
 
 	if err != nil {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("参数有误")))
 		return
 	}
-	err = model.AddApi(data)
+	err = model.InterUpdate(data)
 
 	if err != nil {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("修改接口失败")))

@@ -49,8 +49,10 @@ func AddModule(data *Module) bool {
 	return true
 }
 
-func GetModuleList(pageSize, pageNum int, maps interface{}) (modules []Module, count int) {
-	err := db.Table("module").Where(maps).Count(&count).Offset(pageNum - 1).Limit(pageSize).Find(&modules).Error
+func GetModuleList(pageSize, pageNum int, maps interface{}) (modules []ModuleDetail, count int) {
+	err := db.Table("module").Select("module.*, user.user_name as created_name").Joins("left join user on user.id = " +
+		"module.created_by").
+		Where(maps).Count(&count).Offset((pageNum - 1) * pageSize).Limit(pageSize).Find(&modules).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return
 	}

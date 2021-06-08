@@ -20,6 +20,11 @@ func AddModule(c *gin.Context) {
 		return
 	}
 
+	if moduleStr.ProjectId < 1 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("项目id必填")))
+		return
+	}
+
 	exist := model.CheckModuleNameExist(moduleStr.Name, moduleStr.ProjectId)
 	if exist {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("同项目内模块名称不可重复")))

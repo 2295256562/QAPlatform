@@ -31,7 +31,7 @@ type EnvironmentList struct {
 // CheckNameExist 校验同项目中环境名称是否重复
 func CheckNameExist(name string, projectId int) bool {
 	var env Environment
-	err := db.Table("environment").Select("id").Where("name = ? and project_id = ?").First(&env).Error
+	err := db.Table("environment").Select("id").Where("name = ? and project_id = ?", name, projectId).First(&env).Error
 
 	if err != nil {
 		return false
@@ -107,14 +107,11 @@ func EnvironmentEdit(data *Environment) (flag bool, err error) {
 }
 
 // EnvironmentDetail 项目详情
-func EnvironmentDetail(id int) (env *EnvironmentList, err error) {
-	err = db.Table("environment").Select("environment.*, user.user_name as created_user").
-		Where("id = ?", id).Joins("left join user on user.id = environment.created_by").
+func EnvironmentDetail(id int) (env Environment, err error) {
+	err = db.Table("environment").Select("environment.*").
+		Where("environment.id = ?", id).
 		Scan(&env).Error
-	if err != nil {
-		return nil, err
-	}
-	return env, nil
+	return
 }
 
 func (env *Environment) BeforeCreate(scope *gorm.Scope) error {

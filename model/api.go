@@ -41,7 +41,7 @@ type InterfaceList struct {
 
 type InterfaceUsersDetail struct {
 	UserName string `json:"user_name"`
-	UserId   string `json:"user_id"`
+	UserId   int    `json:"user_id"`
 }
 
 type InterfaceDetail struct {
@@ -104,16 +104,13 @@ func AddApi(data *InterfaceAdd) error {
 }
 
 // CheckInterfaceNameExists 检查接口名称是否存在
-func CheckInterfaceNameExists(name string, projectId int) (flag bool, err error) {
+func CheckInterfaceNameExists(name string, projectId int) (flag bool) {
 	var inter Interface
-	err = db.Table("interface").Select("id").Where("name = ? and project_id = ?", name, projectId).First(&inter).Error
-	if err != nil {
-		return false, err
-	}
+	db.Table("interface").Select("id").Where("name = ? and project_id = ?", name, projectId).First(&inter)
 	if inter.Id < 1 {
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
 
 // FindListByModuleId 根据模块id查询模块下的接口列表
@@ -172,7 +169,7 @@ func InterUpdate(data *InterfaceAdd) error {
 	}
 
 	// 删除人员重新插入
-	if err := tx.Table("interface_user").Where("project_id", data.ProjectId).Unscoped().Delete(inter).Error; err != nil {
+	if err := tx.Table("interface_user").Where("interface_id = ?", data.Id).Unscoped().Delete(inter).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -210,12 +207,12 @@ func InterUpdate(data *InterfaceAdd) error {
 	return nil
 }
 
-func (project *Interface) BeforeCreate(scope *gorm.Scope) error {
+func (inter *Interface) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("CreatedTime", time.Now().Unix())
 	return nil
 }
 
-func (project *Interface) BeforeUpdate(scope *gorm.Scope) error {
+func (inter *Interface) BeforeUpdate(scope *gorm.Scope) error {
 	scope.SetColumn("ModifiedTime", time.Now().Unix())
 	return nil
 }
