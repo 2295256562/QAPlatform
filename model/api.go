@@ -53,6 +53,11 @@ type InterfaceDetail struct {
 	Tester      []InterfaceUsersDetail `json:"tester"`
 }
 
+type InterfaceBase struct {
+	Name string `json:"name"`
+	Id   int    `json:"id"`
+}
+
 // AddApi 添加接口
 func AddApi(data *InterfaceAdd) error {
 	tx := db.Begin()
@@ -139,6 +144,12 @@ func InterList(pageSize, pageNum, projectId int) (list []InterfaceList, count in
 	return list, count, nil
 }
 
+// 查询项目下所有接口
+func InterByProject(projectId int) (inters []InterfaceBase, err error) {
+	err = db.Table("interface").Select("id, name").Where("project_id = ?", projectId).Find(&inters).Error
+	return
+}
+
 // 接口详情
 func InterDetail(apiId int) (detail InterfaceDetail, err error) {
 	err = db.Raw("select i.*, p.name as project_name, m.name as module_name from interface i left join project p on i.project_id = p.id left join module m"+
@@ -169,14 +180,14 @@ func InterUpdate(data *InterfaceAdd) error {
 	}
 
 	// 删除人员重新插入
-	if err := tx.Table("interface_user").Where("interface_id = ?", data.Id).Unscoped().Delete(inter).Error; err != nil {
+	if err := tx.Table("interface_user").Where("interface_id = ?", data.Id).Unscoped().Delete(&inter).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 	// 存储开发人员
 	for i := range data.Develop {
 		err := tx.Table("interface_user").Create(&InterfaceToUser{
-			InterfaceId: inter.Id,
+			InterfaceId: data.Id,
 			UserId:      data.Develop[i],
 			Role:        1,
 		}).Error
@@ -189,7 +200,7 @@ func InterUpdate(data *InterfaceAdd) error {
 	// 存储测试人员
 	for i := range data.Tester {
 		err := tx.Table("interface_user").Create(&InterfaceToUser{
-			InterfaceId: inter.Id,
+			InterfaceId: data.Id,
 			UserId:      data.Tester[i],
 			Role:        0,
 		}).Error

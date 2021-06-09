@@ -59,6 +59,20 @@ func ListInterByModuleId(c *gin.Context) {
 	return
 }
 
+func Inters(c *gin.Context) {
+	projectId := com.StrTo(c.Query("project_id")).MustInt()
+	if projectId < 1 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("项目id不可为空")))
+		return
+	}
+	list, err := model.InterByProject(projectId)
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("查询信息出错")))
+		return
+	}
+	utils.ResponseSuccess(c, list)
+}
+
 func InterfaceList(c *gin.Context) {
 	projectId := com.StrTo(c.Query("project_id")).MustInt()
 	page := com.StrTo(c.DefaultQuery("page", "1")).MustInt()

@@ -47,6 +47,7 @@ func InitRouter() {
 		V1.POST("/inter_add", api.AddInter)
 		V1.GET("/inter_list", api.ListInterByModuleId)
 		V1.GET("/inters", api.InterfaceList)
+		V1.GET("/inter_all", api.Inters)
 		V1.GET("/inter", api.InterDetail)
 		V1.POST("/inter_edit", api.InterEdit)
 	}

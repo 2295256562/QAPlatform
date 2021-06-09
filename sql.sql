@@ -77,3 +77,22 @@ create table `interface_user`
     `user_id`       int not null comment '用户id',
     `role`          tinyint not null comment '角色'
 )comment '接口人员表' charset = utf8;
+
+create table interface_case(
+    `id`  int unsigned auto_increment primary key,
+    `name` varchar(100) not null comment '用例名称',
+    `type` varchar(12) not null  comment 'body类型',
+    `parameters` text comment 'body参数',
+    `headers` text comment 'body' comment '请求头',
+    `query` text comment 'query参数',
+    `asserts` text comment '断言信息',
+    `extract` text comment '提取参数',
+    `remark` varchar(200) comment '备注',
+    `interface_id` int not null comment '接口id',
+    `env_id` int not null comment '环境id',
+    `created_by`    int unsigned not null comment '创建人',
+    `modified_by`   int unsigned null comment '修改人',
+    `created_time`  int unsigned default 0 null comment '创建时间',
+    `modified_time` int unsigned default 0 null comment '修改时间',
+    `state`         tinyint unsigned default 1 null comment '状态 0为禁用、1为启用',
+)comment '接口用例表' charset = utf8;
