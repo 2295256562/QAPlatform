@@ -87,6 +87,13 @@ func UserListByRole(role int) (users []UserIDAndUserName, err error) {
 	return users, nil
 }
 
+func Users() (users []UserIDAndUserName, err error) {
+	if err := db.Table("user").Select("id as user_id, user_name").Where("state = 1").Scan(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (user *User) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("CreatedTime", time.Now().Unix())
 	return nil

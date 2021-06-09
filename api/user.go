@@ -81,3 +81,19 @@ func QueryUserListOnRole(c *gin.Context) {
 	utils.ResponseSuccess(c, users)
 	return
 }
+
+func UserAll(c *gin.Context) {
+	users, err := model.Users()
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("查询用户列表错误")))
+		return
+	}
+
+	if users == nil {
+		arr := make([]int, 0)
+		utils.ResponseSuccess(c, arr)
+		return
+	}
+	utils.ResponseSuccess(c, users)
+	return
+}

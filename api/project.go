@@ -55,7 +55,7 @@ func ProjectList(c *gin.Context) {
 	return
 }
 
-// 获取项目列表不带分页
+// Projects 获取项目列表不带分页
 func Projects(c *gin.Context) {
 	projects, err := model.GetProjects()
 	if err != nil {

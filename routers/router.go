@@ -19,6 +19,7 @@ func InitRouter() {
 		V1.POST("/register", api.Register)
 		V1.Use(middleware.JWTAuthMiddleware())
 		V1.GET("/users", api.QueryUserListOnRole)
+		V1.GET("/user_all", api.UserAll)
 
 		// 项目相关接口
 		V1.POST("/add_project", api.CreateProject)
@@ -50,6 +51,12 @@ func InitRouter() {
 		V1.GET("/inter_all", api.Inters)
 		V1.GET("/inter", api.InterDetail)
 		V1.POST("/inter_edit", api.InterEdit)
+
+		// 用例相关接口
+		V1.POST("/add_case", api.AddCase)
+		V1.GET("/case_list", api.InterfaceCaseList)
+		V1.GET("/case_detail", api.InterfaceDetail)
+		V1.POST("/case_edit", api.InterfaceCaseEdit)
 	}
 	r.Run(utils.HttpPort)
 }
