@@ -6,6 +6,8 @@ import (
 	"github.com/asmcos/requests"
 	"github.com/oliveagle/jsonpath"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -126,18 +128,22 @@ func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult) {
 	switch method {
 	case "GET":
 		resp, err := requests.Get(url + query)
+		result.ResponseBody = resp.Text()
 		fmt.Println(resp.Text(), err)
 	case "POST":
 		parameters := apiCase.Parameters
 		body := replaceKeyFromMap(parameters, apiCase.GVars)
-		fmt.Println("body信息 ==》", body)
+		result.RequestBody = body
+		fmt.Println("body信息 ===>", body)
 		if bodyType == "form" {
+			result.RequestBodyType = "form"
 			mapData, _ := JsonToMap(body)
 			resp, err := requests.Post(url, mapData)
 			fmt.Println(resp.Text(), err)
 		}
 		if bodyType == "json" {
 			var data map[string]interface{}
+			result.RequestBodyType = "json"
 			if err := json.Unmarshal([]byte(body), &data); err == nil {
 				resp, err := requests.PostJson(url, data)
 				fmt.Println(resp.Text(), err)
@@ -146,6 +152,13 @@ func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult) {
 			}
 		}
 	}
+	assertResult := handleAssert(apiCase, &result)
+	if assertResult {
+		result.ResultType = 1
+	} else {
+		result.ResultType = 0
+	}
+	fmt.Println(result)
 	return
 }
 
@@ -172,14 +185,93 @@ func applyQueryParameters(apiCase *ApiCase) (query string) {
 }
 
 // 断言函数
-//func Assertion(assertion Asserts) {
-//	switch assertion.AssertType {
-//	case "response_body":
-//		JsonPathExtract()
-//	}
-//}
+func handleAssert(apiCase *ApiCase, result *ApiCaseResult) (flag bool) {
+	flag = true
+	asserts := apiCase.Asserts
+	for _, assert := range asserts {
+		assertResult := Assertion(&assert, result)
+		if !assertResult.Result {
+			flag = false
+		}
+	}
+	return
+}
 
-// jsonpath
+func Assertion(assertion *Asserts, result *ApiCaseResult) (assertResult AssertsResult) {
+	switch assertion.AssertType {
+	case "response_json":
+		extract, err := JsonPathExtract(result.ResponseBody, assertion.Check)
+		if err != nil {
+			assertResult.RealType = "null"
+			assertResult.RealValue = ""
+		}
+		realType := getObjRealType(extract)
+		if realType == "null" {
+			assertResult.RealType = realType
+			assertResult.RealValue = ""
+		} else {
+			assertResult.RealType = realType
+			assertResult.RealValue = Strval(extract)
+		}
+		break
+	case "status_code":
+		realType := getObjRealType(result.ResponseStatusCode)
+		if realType == "null" {
+			assertResult.RealType = "null"
+			assertResult.RealValue = ""
+		} else {
+			assertResult.RealType = "realType"
+			assertResult.RealValue = Strval(result.ResponseStatusCode)
+		}
+		break
+	case "response":
+		if result.ResponseBody == "" {
+			assertResult.RealType = "null"
+		} else {
+			assertResult.RealType = "string"
+		}
+		assertResult.RealValue = result.ResponseBody
+	}
+
+	flag, err := getAssertionResult(assertion, assertResult.RealType, assertResult.RealValue)
+	if err != nil {
+		assertResult.Result = false
+	}
+	assertResult.Result = flag
+	return
+}
+
+// 获取断言结果
+func getAssertionResult(ass *Asserts, realType, realValue string) (flag bool, err error) {
+	comparator := ass.Comparator
+	switch comparator {
+	case "相等":
+		if ass.Expect == realValue {
+			return true, nil
+		}
+	case "大于":
+		if realType == "number" {
+			var realva, expect int
+			realva, err = strconv.Atoi(realValue)
+			expect, err = strconv.Atoi(ass.Expect)
+			if err != nil {
+				return false, err
+			}
+			if realva > expect {
+				return true, nil
+			} else {
+				return false, nil
+			}
+		}
+	case "包含":
+		if strings.Contains(realValue, ass.Expect) {
+			return true, nil
+		}
+	}
+	return
+}
+
+// jsonpath表达式提取器
 func JsonPathExtract(response, extractExpression string) (res interface{}, err error) {
 	var jsonData interface{}
 	json.Unmarshal([]byte(response), &jsonData)
@@ -219,6 +311,22 @@ func replaceKeyFromMap(str string, vars map[string]interface{}) (result string) 
 	return
 }
 
+// 获取参数类型
+func getObjRealType(obj interface{}) (kind string) {
+	if obj == nil {
+		return "null"
+	}
+	switch obj.(type) { //多选语句switch
+	case string:
+		return "string"
+	case int:
+		return "number"
+	case bool:
+		return "boolean"
+	}
+	return
+}
+
 func MapToJson(param map[string]interface{}) string {
 	dataType, _ := json.Marshal(param)
 	dataString := string(dataType)
@@ -238,4 +346,59 @@ func JsonToMap(jsonStr string) (map[string]string, error) {
 	}
 
 	return m, nil
+}
+
+func Strval(value interface{}) string {
+	var key string
+	if value == nil {
+		return key
+	}
+
+	switch value.(type) {
+	case float64:
+		ft := value.(float64)
+		key = strconv.FormatFloat(ft, 'f', -1, 64)
+	case float32:
+		ft := value.(float32)
+		key = strconv.FormatFloat(float64(ft), 'f', -1, 64)
+	case int:
+		it := value.(int)
+		key = strconv.Itoa(it)
+	case uint:
+		it := value.(uint)
+		key = strconv.Itoa(int(it))
+	case int8:
+		it := value.(int8)
+		key = strconv.Itoa(int(it))
+	case uint8:
+		it := value.(uint8)
+		key = strconv.Itoa(int(it))
+	case int16:
+		it := value.(int16)
+		key = strconv.Itoa(int(it))
+	case uint16:
+		it := value.(uint16)
+		key = strconv.Itoa(int(it))
+	case int32:
+		it := value.(int32)
+		key = strconv.Itoa(int(it))
+	case uint32:
+		it := value.(uint32)
+		key = strconv.Itoa(int(it))
+	case int64:
+		it := value.(int64)
+		key = strconv.FormatInt(it, 10)
+	case uint64:
+		it := value.(uint64)
+		key = strconv.FormatUint(it, 10)
+	case string:
+		key = value.(string)
+	case []byte:
+		key = string(value.([]byte))
+	default:
+		newValue, _ := json.Marshal(value)
+		key = string(newValue)
+	}
+
+	return key
 }
