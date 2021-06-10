@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/go-ini/ini"
+	"os"
 )
 
 var (
@@ -18,8 +19,18 @@ var (
 )
 
 func init() {
-	file, err := ini.Load("config/config.ini")
+	//file, err := ini.Load("config/config.ini")
+	envFile := "config/config.ini"
 
+	for i := 0; i < 5; i++ {
+		if _, err := os.Stat(envFile); err == nil {
+			break
+		} else {
+			envFile = "../" + envFile
+		}
+	}
+
+	file, err := ini.Load(envFile)
 	if err != nil {
 		fmt.Println("加载配置文件错误，请检查配置文件")
 	}

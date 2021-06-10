@@ -3,6 +3,7 @@ module QAPlatform
 go 1.16
 
 require (
+	github.com/asmcos/requests v0.0.0-20210319030608-c839e8ae4946 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/e421083458/golang_common v1.1.2
 	github.com/gin-gonic/gin v1.7.2
@@ -16,6 +17,7 @@ require (
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/ugorji/go v1.2.6 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
