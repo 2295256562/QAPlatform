@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"github.com/asmcos/requests"
 	"github.com/oliveagle/jsonpath"
+	"go.uber.org/zap"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var log *zap.Logger
 
 type Headers struct {
 	Key   string `json:"key"`
@@ -62,15 +65,15 @@ type ApiCaseResult struct {
 	ResponseHeaders    string `json:"response_headers"`
 	ResponseTime       string `json:"response_time"`
 
-	ResponseAsserts  string `json:"response_asserts"`
-	ResponseExtracts string `json:"response_extracts"`
-	Exception        string `json:"exception"`
-	ProjectId        int    `json:"project_id"`
-	CreatedBy        int    `json:"created_by"`
-	ModifiedBy       int    `json:"modified_by"`
-	Id               int    `json:"id"`
-	CreatedTime      int    `json:"created_time"`
-	ModifiedTime     int    `json:"modified_time"`
+	ResponseAsserts  []AssertsResult `json:"response_asserts"`
+	ResponseExtracts string          `json:"response_extracts"`
+	Exception        string          `json:"exception"`
+	ProjectId        int             `json:"project_id"`
+	CreatedBy        int             `json:"created_by"`
+	ModifiedBy       int             `json:"modified_by"`
+	Id               int             `json:"id"`
+	CreatedTime      int             `json:"created_time"`
+	ModifiedTime     int             `json:"modified_time"`
 }
 
 // 断言结构体
@@ -99,7 +102,7 @@ type Extract struct {
 }
 
 // 执行接口自动
-func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult) {
+func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult, err error) {
 	result.InterfaceId = apiCase.InterfaceId
 	result.ProjectId = apiCase.ProjectId
 	result.CaseId = apiCase.Id
@@ -122,14 +125,11 @@ func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult) {
 	bodyType := apiCase.Type
 	result.RequestBodyType = bodyType
 
-	//var err error
-	//var resp requests.Response
+	var resp *requests.Response
 
 	switch method {
 	case "GET":
-		resp, err := requests.Get(url + query)
-		result.ResponseBody = resp.Text()
-		fmt.Println(resp.Text(), err)
+		resp, err = requests.Get(url + query)
 	case "POST":
 		parameters := apiCase.Parameters
 		body := replaceKeyFromMap(parameters, apiCase.GVars)
@@ -138,27 +138,29 @@ func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult) {
 		if bodyType == "form" {
 			result.RequestBodyType = "form"
 			mapData, _ := JsonToMap(body)
-			resp, err := requests.Post(url, mapData)
-			fmt.Println(resp.Text(), err)
+			resp, err = requests.Post(url, mapData)
 		}
 		if bodyType == "json" {
 			var data map[string]interface{}
 			result.RequestBodyType = "json"
-			if err := json.Unmarshal([]byte(body), &data); err == nil {
-				resp, err := requests.PostJson(url, data)
-				fmt.Println(resp.Text(), err)
+			if err1 := json.Unmarshal([]byte(body), &data); err1 == nil {
+				resp, err = requests.PostJson(url, data)
 			} else {
-				fmt.Println("字符串转json失败：", err)
+				fmt.Println("字符串转json失败：", err1)
 			}
 		}
 	}
+	result.ResponseBody = resp.Text()
+	result.ResponseStatusCode = resp.R.StatusCode
+	fmt.Println(resp.Text())
 	assertResult := handleAssert(apiCase, &result)
 	if assertResult {
 		result.ResultType = 1
 	} else {
 		result.ResultType = 0
 	}
-	fmt.Println(result)
+	fmt.Println("断言结果：", result.ResponseAsserts)
+	fmt.Println("测试结果：", result.ResultType)
 	return
 }
 
@@ -189,7 +191,9 @@ func handleAssert(apiCase *ApiCase, result *ApiCaseResult) (flag bool) {
 	flag = true
 	asserts := apiCase.Asserts
 	for _, assert := range asserts {
+		fmt.Println(assert)
 		assertResult := Assertion(&assert, result)
+		result.ResponseAsserts = append(result.ResponseAsserts, assertResult)
 		if !assertResult.Result {
 			flag = false
 		}
@@ -198,6 +202,10 @@ func handleAssert(apiCase *ApiCase, result *ApiCaseResult) (flag bool) {
 }
 
 func Assertion(assertion *Asserts, result *ApiCaseResult) (assertResult AssertsResult) {
+	assertResult.AssertType = assertion.AssertType
+	assertResult.Check = assertion.Check
+	assertResult.Expect = assertion.Expect
+	assertResult.Comparator = assertion.Comparator
 	switch assertion.AssertType {
 	case "response_json":
 		extract, err := JsonPathExtract(result.ResponseBody, assertion.Check)
@@ -220,7 +228,7 @@ func Assertion(assertion *Asserts, result *ApiCaseResult) (assertResult AssertsR
 			assertResult.RealType = "null"
 			assertResult.RealValue = ""
 		} else {
-			assertResult.RealType = "realType"
+			assertResult.RealType = "number"
 			assertResult.RealValue = Strval(result.ResponseStatusCode)
 		}
 		break
@@ -323,6 +331,10 @@ func getObjRealType(obj interface{}) (kind string) {
 		return "number"
 	case bool:
 		return "boolean"
+	case float64:
+		return "number"
+	default:
+		return "string"
 	}
 	return
 }

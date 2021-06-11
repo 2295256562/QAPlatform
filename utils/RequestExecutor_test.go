@@ -334,10 +334,9 @@ func Test_Case(t *testing.T) {
 		Method: "GET",
 		GVars:  data,
 		Asserts: []Asserts{
-			{AssertType: "response_json",
-				Check:      "$.data[0].uid",
-				Expect:     "66455",
-				Comparator: "相等"},
+			{AssertType: "response_json", Check: "$.data[0].uid", Expect: "66455", Comparator: "相等"},
+			{AssertType: "response_json", Check: "$.data[0].uid", Expect: "66469", Comparator: "相等"},
+			{AssertType: "status_code", Check: "", Expect: "200", Comparator: "相等"},
 		},
 	})
 	//RequestExecutor(&ApiCase{
