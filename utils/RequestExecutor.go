@@ -18,6 +18,33 @@ type Headers struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
+type ApiCaseStr struct {
+	Id          int    `json:"id"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Parameters  string `json:"parameters"` // body参数
+	Headers     string `json:"headers"`
+	Query       string `json:"query"`
+	Asserts     string `json:"asserts"`
+	Extract     string `json:"extract"`
+	Remark      string `json:"remark"`
+	InterfaceId int    `json:"interface_id"`
+	EnvId       int    `json:"env_id"`
+
+	CreatedBy    int `json:"created_by"`
+	ModifiedBy   int `json:"modified_by"`
+	CreatedTime  int `json:"created_time"`
+	ModifiedTime int `json:"modified_time"`
+	ProjectId    int `json:"project_id"`
+
+	InterfaceName string `json:"interface_name"`
+	Url           string `json:"url"`
+	Method        string `json:"method"`
+	Domain        string `json:"domain"`
+
+	GVars      string `json:"g_vars"` // 全局变量
+	EnvHeaders string `json:"env_headers"`
+}
 
 type ApiCase struct {
 	Id          int       `json:"id"`
@@ -65,15 +92,15 @@ type ApiCaseResult struct {
 	ResponseHeaders    string `json:"response_headers"`
 	ResponseTime       string `json:"response_time"`
 
-	ResponseAsserts  []AssertsResult `json:"response_asserts"`
-	ResponseExtracts string          `json:"response_extracts"`
-	Exception        string          `json:"exception"`
-	ProjectId        int             `json:"project_id"`
-	CreatedBy        int             `json:"created_by"`
-	ModifiedBy       int             `json:"modified_by"`
-	Id               int             `json:"id"`
-	CreatedTime      int             `json:"created_time"`
-	ModifiedTime     int             `json:"modified_time"`
+	ResponseAsserts  []*AssertsResult `json:"response_asserts"`
+	ResponseExtracts []ExtractResult  `json:"response_extracts"`
+	Exception        string           `json:"exception"`
+	ProjectId        int              `json:"project_id"`
+	CreatedBy        int              `json:"created_by"`
+	ModifiedBy       int              `json:"modified_by"`
+	Id               int              `json:"id"`
+	CreatedTime      int              `json:"created_time"`
+	ModifiedTime     int              `json:"modified_time"`
 }
 
 // 断言结构体
@@ -101,12 +128,22 @@ type Extract struct {
 	VarName        string `json:"var_name"`
 }
 
+// 提取参数结果结构体
+type ExtractResult struct {
+	ExtractExpress string `json:"extract_express"`
+	VarName        string `json:"var_name"`
+	VarValue       string `json:"var_value"`
+	VarType        string `json:"var_type"`
+}
+
 // 执行接口自动
 func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult, err error) {
 	result.InterfaceId = apiCase.InterfaceId
 	result.ProjectId = apiCase.ProjectId
 	result.CaseId = apiCase.Id
 	result.CaseName = apiCase.Name
+	result.Url = apiCase.Url
+	result.CreatedBy = apiCase.CreatedBy
 	result.CreatedTime = int(time.Now().Unix())
 
 	// 处理headers参数
@@ -161,6 +198,7 @@ func RequestExecutor(apiCase *ApiCase) (result ApiCaseResult, err error) {
 	}
 	fmt.Println("断言结果：", result.ResponseAsserts)
 	fmt.Println("测试结果：", result.ResultType)
+	handleExtract(apiCase, &result)
 	return
 }
 
@@ -190,14 +228,16 @@ func applyQueryParameters(apiCase *ApiCase) (query string) {
 func handleAssert(apiCase *ApiCase, result *ApiCaseResult) (flag bool) {
 	flag = true
 	asserts := apiCase.Asserts
+	var assertsList = make([]*AssertsResult, 0)
 	for _, assert := range asserts {
 		fmt.Println(assert)
 		assertResult := Assertion(&assert, result)
-		result.ResponseAsserts = append(result.ResponseAsserts, assertResult)
+		assertsList = append(assertsList, &assertResult)
 		if !assertResult.Result {
 			flag = false
 		}
 	}
+	result.ResponseAsserts = assertsList
 	return
 }
 
@@ -249,6 +289,27 @@ func Assertion(assertion *Asserts, result *ApiCaseResult) (assertResult AssertsR
 	return
 }
 
+// 参数提取
+func handleExtract(apiCase *ApiCase, result *ApiCaseResult) {
+	var extractList = make([]ExtractResult, 0)
+	extract := apiCase.Extract
+	for _, e := range extract {
+		value, err := JsonPathExtract(result.ResponseBody, e.ExtractExpress)
+		if err != nil {
+			extractList = append(
+				extractList,
+				ExtractResult{VarName: e.VarName, ExtractExpress: e.ExtractExpress, VarValue: "null"},
+			)
+		}
+		extractList = append(
+			extractList,
+			ExtractResult{VarName: e.VarName, ExtractExpress: e.ExtractExpress,
+				VarValue: Strval(value), VarType: getObjRealType(value)},
+		)
+	}
+	return
+}
+
 // 获取断言结果
 func getAssertionResult(ass *Asserts, realType, realValue string) (flag bool, err error) {
 	comparator := ass.Comparator
@@ -290,8 +351,6 @@ func JsonPathExtract(response, extractExpression string) (res interface{}, err e
 	}
 	return
 }
-
-// 比较相对
 
 // 字符串正则替换变量
 func replaceKeyFromMap(str string, vars map[string]interface{}) (result string) {

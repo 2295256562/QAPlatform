@@ -1,6 +1,7 @@
 package model
 
 import (
+	"QAPlatform/utils"
 	"github.com/jinzhu/gorm"
 	"time"
 )
@@ -41,6 +42,7 @@ type InterCaseList struct {
 	Url           string `json:"url"`
 	Method        string `json:"method"`
 	Domain        string `json:"domain"`
+	CreatedUser   string `json:"created_user"`
 }
 
 // InterfaceCaseAdd 添加接口测试用例
@@ -54,9 +56,10 @@ func InterfaceCaseAdd(data *InterfaceCase) (err error) {
 // CaseList 查询接口列表
 func CaseList(data *InterfaceQueryDto) (InterCaseList []InterCaseList) {
 	tx := db.Table("interface_case").Debug()
-	tx = tx.Select("interface_case.*, interface.name as interface_name, interface.url, interface.method, environment.domain")
+	tx = tx.Select("interface_case.*, interface.name as interface_name, interface.url, interface.method, environment.domain, user.user_name as created_user")
 	tx = tx.Where("interface_case.project_id = ? and interface_case.state = 1", data.ProjectId)
-	tx = tx.Joins("left join interface on interface.id = interface_case.interface_id left join environment on environment.id = interface_case.env_id")
+	tx = tx.Joins("left join interface on interface.id = interface_case.interface_id" +
+		" left join environment on environment.id = interface_case.env_id left join user on interface_case.created_by = user.id")
 
 	if data.Name != "" {
 		tx = tx.Where("name = ?", data.Name)
@@ -82,6 +85,18 @@ func CaseList(data *InterfaceQueryDto) (InterCaseList []InterCaseList) {
 // CaseDetail 用例详情
 func CaseDetail(id int) (caseDetail InterfaceCase, err error) {
 	if err = db.Table("interface_case").Where("id = ?", id).Find(&caseDetail).Error; err != nil {
+		return
+	}
+	return
+}
+
+// 用例执行
+func CaseInfo(id int) (apiCase utils.ApiCaseStr, err error) {
+
+	if err = db.Debug().Table("interface_case as c").
+		Select("c.*, e.domain, e.variables as g_vars, e.headers as env_headers, i.name as interface_name, i.url, i.method").
+		Joins("left join environment e on c.env_id = e.id left join interface i on c.interface_id = i.id").
+		Where("c.id = ?", id).Scan(&apiCase).Error; err != nil {
 		return
 	}
 	return

@@ -339,6 +339,7 @@ func Test_Case(t *testing.T) {
 			{AssertType: "status_code", Check: "", Expect: "200", Comparator: "相等"},
 		},
 	})
+
 	//RequestExecutor(&ApiCase{
 	//	Id:         1,
 	//	Name:       "百度",
