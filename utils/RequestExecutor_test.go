@@ -325,10 +325,11 @@ func Test_Case(t *testing.T) {
 	data["id"] = 9
 	data["password"] = "123456"
 
-	RequestExecutor(&ApiCase{
+	caseExecution := &Cases{}
+	caseExecution.RequestExecutor(&ApiCase{
 		Id:     1,
 		Name:   "百度",
-		Query:  "?limit=${id}",
+		Query:  "?limit=" + "${id}",
 		Domain: "https://studygolang.com/",
 		Url:    "users/newest",
 		Method: "GET",
@@ -339,6 +340,9 @@ func Test_Case(t *testing.T) {
 			{AssertType: "status_code", Check: "", Expect: "200", Comparator: "相等"},
 		},
 	})
+	for _, log := range caseExecution.CaseLog {
+		fmt.Println(log)
+	}
 
 	//RequestExecutor(&ApiCase{
 	//	Id:         1,

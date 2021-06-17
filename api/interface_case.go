@@ -127,6 +127,7 @@ func InterfaceCaseEdit(c *gin.Context) {
 
 func InterfaceCaseDebug(c *gin.Context) {
 	Id := com.StrTo(c.Query("id")).MustInt()
+	userId := c.MustGet("id").(int)
 
 	if Id < 1 {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("用例id不能为空")))
@@ -179,8 +180,8 @@ func InterfaceCaseDebug(c *gin.Context) {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("转换全局请求头出错")))
 		return
 	}
-
-	executor, err := utils.RequestExecutor(&utils.ApiCase{
+	caseExecution := &utils.Cases{}
+	result, err := caseExecution.RequestExecutor(&utils.ApiCase{
 		Id:            info.Id,
 		Name:          info.Name,
 		Type:          info.Type,
@@ -205,10 +206,46 @@ func InterfaceCaseDebug(c *gin.Context) {
 		EnvHeaders:    env_headers,
 	})
 
+	// 存储测试结果
+	ass, err := json.Marshal(result.ResponseAsserts)
+	ext, err := json.Marshal(result.ResponseExtracts)
+	res, err1 := model.AddCaseResult(&model.ApiCaseResultStr{
+		CaseName:           result.CaseName,
+		CaseId:             result.CaseId,
+		InterfaceId:        result.InterfaceId,
+		SuiteId:            0,
+		Method:             result.Method,
+		Url:                result.Url,
+		ResultType:         result.ResultType,
+		RequestHeaders:     utils.MapToJson(result.RequestHeaders),
+		RequestQuery:       result.RequestQuery,
+		RequestBodyType:    result.RequestBodyType,
+		RequestBody:        result.RequestBody,
+		ResponseStatusCode: result.ResponseStatusCode,
+		ResponseBody:       result.ResponseBody,
+		ResponseHeaders:    utils.MapToJson(result.ResponseHeaders),
+		ResponseTime:       result.ResponseTime,
+		ResponseAsserts:    utils.Strval(ass),
+		ResponseExtracts:   utils.Strval(ext),
+		Exception:          result.Exception,
+		ProjectId:          result.ProjectId,
+		CreatedBy:          userId,
+	})
+
+	fmt.Println(res)
+	if err1 != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("存储执行结果失败")))
+		return
+	}
+	// 存储执行日志
+	for _, log := range caseExecution.CaseLog {
+		model.AddCaseLog(&model.CaseLog{Msg: log.Msg, Level: log.Level, ReportId: res})
+	}
+
 	if err != nil {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("执行用例失败")))
 		return
 	}
-	utils.ResponseSuccess(c, executor)
+	utils.ResponseSuccess(c, result)
 	return
 }
