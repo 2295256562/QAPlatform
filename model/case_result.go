@@ -10,6 +10,7 @@ type ApiCaseResultStr struct {
 	CaseName           string `json:"case_name"`
 	CaseId             int    `json:"case_id"`
 	InterfaceId        int    `json:"interface_id"`
+	EnvName            string `json:"env_name"`
 	SuiteId            int    `json:"suite_id"`
 	Method             string `json:"method"`
 	Url                string `json:"url"`
@@ -37,6 +38,14 @@ func AddCaseResult(result *ApiCaseResultStr) (id int, err error) {
 		return 0, err
 	}
 	return result.Id, nil
+}
+
+func QueryCaseResult(id int) (result ApiCaseResultStr, err error) {
+	err = db.Debug().Table("case_result").Where("id = ?", id).Scan(&result).Error
+	if err != nil {
+		return
+	}
+	return result, nil
 }
 
 func (env *ApiCaseResultStr) BeforeCreate(scope *gorm.Scope) error {

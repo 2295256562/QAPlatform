@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/asmcos/requests"
 	"github.com/oliveagle/jsonpath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +26,7 @@ type ApiCaseStr struct {
 	Remark      string `json:"remark"`
 	InterfaceId int    `json:"interface_id"`
 	EnvId       int    `json:"env_id"`
+	EnvName     string `json:"env_name"`
 
 	CreatedBy    int `json:"created_by"`
 	ModifiedBy   int `json:"modified_by"`
@@ -77,6 +77,7 @@ type ApiCaseResult struct {
 	CaseName           string                 `json:"case_name"`
 	CaseId             int                    `json:"case_id"`
 	InterfaceId        int                    `json:"interface_id"`
+	EnvName            string                 `json:"env_name"`
 	Method             string                 `json:"method"`
 	SuiteId            string                 `json:"suite_id"`
 	Url                string                 `json:"url"`
@@ -145,6 +146,7 @@ type Cases struct {
 
 // 执行接口自动
 func (c *Cases) RequestExecutor(apiCase *ApiCase) (result ApiCaseResult, err error) {
+	result.EnvName = apiCase.EnvName
 	result.InterfaceId = apiCase.InterfaceId
 	result.ProjectId = apiCase.ProjectId
 	result.CaseId = apiCase.Id
@@ -157,6 +159,7 @@ func (c *Cases) RequestExecutor(apiCase *ApiCase) (result ApiCaseResult, err err
 	fmt.Println(headers)
 	// 处理query参数
 	query := c.applyQueryParameters(apiCase)
+	fmt.Println(query)
 	result.RequestQuery = query
 	// 得到请求方法
 	method := apiCase.Method
@@ -405,40 +408,10 @@ func JsonPathExtract(response, extractExpression string) (res interface{}, err e
 
 // 字符串正则替换变量
 func replaceKeyFromMap(str string, vars map[string]interface{}) (result string) {
-	flysnowRegexp := regexp.MustCompile(`\$\{.*?\}`)
-	params := flysnowRegexp.FindStringSubmatch(str)
-
-	re3, _ := regexp.Compile(`\$\{ .*？\}`)
-	fmt.Println(re3)
-	for _, value := range params {
-		fmt.Println("表达式", value)
+	for k, v := range vars {
+		str = strings.ReplaceAll(str, `${`+k+`}`, Strval(v))
 	}
-
-	//for _, exp := range vars {
-	//
-	//	result = strings.Replace(str, "${"+exp+"}", toString(exp), -1)
-	//}
-	return
-	//for key, _ := range vars {
-	//	var temp interface{}
-	//	if val, isOk := vars[key]; isOk {
-	//		temp = val
-	//	} else {
-	//		fmt.Println("获取到key失败")
-	//	}
-	//	switch temp.(type) {
-	//	case string:
-	//		result = re3.ReplaceAllString(str, temp.(string))
-	//	case int:
-	//		result = re3.ReplaceAllString(str, fmt.Sprintf("%d", temp))
-	//	case bool:
-	//		result = re3.ReplaceAllString(str, fmt.Sprintf("%t", temp))
-	//	case float64:
-	//		result = re3.ReplaceAllString(str, fmt.Sprintf("%.2f", temp))
-	//	}
-	//}
-	fmt.Println(str)
-	return
+	return str
 }
 
 // 获取参数类型

@@ -193,6 +193,7 @@ func InterfaceCaseDebug(c *gin.Context) {
 		Remark:        info.Remark,
 		InterfaceId:   info.InterfaceId,
 		EnvId:         info.EnvId,
+		EnvName:       info.EnvName,
 		CreatedBy:     info.CreatedBy,
 		ModifiedBy:    info.ModifiedBy,
 		CreatedTime:   info.CreatedTime,
@@ -213,6 +214,7 @@ func InterfaceCaseDebug(c *gin.Context) {
 		CaseName:           result.CaseName,
 		CaseId:             result.CaseId,
 		InterfaceId:        result.InterfaceId,
+		EnvName:            result.EnvName,
 		SuiteId:            0,
 		Method:             result.Method,
 		Url:                result.Url,
@@ -232,7 +234,6 @@ func InterfaceCaseDebug(c *gin.Context) {
 		CreatedBy:          userId,
 	})
 
-	fmt.Println(res)
 	if err1 != nil {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("存储执行结果失败")))
 		return
@@ -246,6 +247,34 @@ func InterfaceCaseDebug(c *gin.Context) {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("执行用例失败")))
 		return
 	}
+	utils.ResponseSuccess(c, res)
+	return
+}
+
+func InterfaceCaseResult(c *gin.Context) {
+	Id := com.StrTo(c.Query("id")).MustInt()
+	if Id < 1 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("测试报告id不能为空")))
+		return
+	}
+	result, err := model.QueryCaseResult(Id)
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("查询测试报告出错")))
+		return
+	}
 	utils.ResponseSuccess(c, result)
+	return
+}
+
+func InterfaceCaseLog(c *gin.Context) {
+	Id := com.StrTo(c.Query("id")).MustInt()
+
+	if Id < 1 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("报告id不能为空")))
+		return
+	}
+
+	logs := model.QueryCaseLogByReportId(Id)
+	utils.ResponseSuccess(c, logs)
 	return
 }

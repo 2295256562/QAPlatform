@@ -58,6 +58,8 @@ func InitRouter() {
 		V1.GET("/case_detail", api.InterfaceDetail)
 		V1.POST("/case_edit", api.InterfaceCaseEdit)
 		V1.GET("/case_debug", api.InterfaceCaseDebug)
+		V1.GET("/case_log", api.InterfaceCaseLog)
+		V1.GET("/case_result", api.InterfaceCaseResult)
 	}
 	r.Run(utils.HttpPort)
 }

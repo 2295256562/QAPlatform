@@ -12,3 +12,11 @@ func AddCaseLog(log *CaseLog) bool {
 	}
 	return true
 }
+
+// 通过reportId查询日志
+func QueryCaseLogByReportId(reportId int) (caseLogs []CaseLog) {
+	if err := db.Debug().Table("case_log").Where("report_id = ?", reportId).Scan(&caseLogs).Error; err != nil {
+		return nil
+	}
+	return
+}

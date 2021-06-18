@@ -94,7 +94,7 @@ func CaseDetail(id int) (caseDetail InterfaceCase, err error) {
 func CaseInfo(id int) (apiCase utils.ApiCaseStr, err error) {
 
 	if err = db.Debug().Table("interface_case as c").
-		Select("c.*, e.domain, e.variables as g_vars, e.headers as env_headers, i.name as interface_name, i.url, i.method").
+		Select("c.*, e.domain, e.variables as g_vars, e.headers as env_headers, e.name as env_name, i.name as interface_name, i.url, i.method").
 		Joins("left join environment e on c.env_id = e.id left join interface i on c.interface_id = i.id").
 		Where("c.id = ?", id).Scan(&apiCase).Error; err != nil {
 		return

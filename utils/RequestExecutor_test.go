@@ -340,9 +340,9 @@ func Test_Case(t *testing.T) {
 			{AssertType: "status_code", Check: "", Expect: "200", Comparator: "相等"},
 		},
 	})
-	for _, log := range caseExecution.CaseLog {
-		fmt.Println(log)
-	}
+	//for _, log := range caseExecution.CaseLog {
+	//	fmt.Println(log)
+	//}
 
 	//RequestExecutor(&ApiCase{
 	//	Id:         1,
