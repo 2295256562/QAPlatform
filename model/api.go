@@ -69,7 +69,7 @@ func AddApi(data *InterfaceAdd) error {
 		ProjectId: data.ProjectId,
 		ModuleId:  data.ModuleId,
 	}
-	if err := tx.Table("interface").Create(&inface).Error; err != nil {
+	if err := tx.Table("interface").Create(inface).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
