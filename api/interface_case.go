@@ -240,7 +240,7 @@ func InterfaceCaseDebug(c *gin.Context) {
 	}
 	// 存储执行日志
 	for _, log := range caseExecution.CaseLog {
-		model.AddCaseLog(&model.CaseLog{Msg: log.Msg, Level: log.Level, ReportId: res})
+		model.AddCaseLog(&model.CaseLog{Msg: log.Msg, Level: log.Level, CreatedTime: log.CreatedTime, ReportId: res})
 	}
 
 	if err != nil {

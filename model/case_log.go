@@ -1,9 +1,10 @@
 package model
 
 type CaseLog struct {
-	Level    string `json:"level"`
-	Msg      string `json:"msg"`
-	ReportId int    `json:"case_id"`
+	Level       string `json:"level"`
+	Msg         string `json:"msg"`
+	CreatedTime int    `json:"created_time"`
+	ReportId    int    `json:"case_id"`
 }
 
 func AddCaseLog(log *CaseLog) bool {

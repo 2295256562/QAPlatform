@@ -361,7 +361,9 @@ func (c *Cases) handleExtract(apiCase *ApiCase, result *ApiCaseResult) {
 			extractList = append(extractList, ExtractResult{VarName: e.VarName, ExtractExpress: e.ExtractExpress, VarValue: Strval(value), VarType: getObjRealType(value)})
 		}
 	}
+	c.CaseLog = append(c.CaseLog, CaseLog{Level: "info", Msg: "参数提取结束", CreatedTime: int(time.Now().Unix())})
 	result.ResponseExtracts = extractList
+	return
 }
 
 // 获取断言结果

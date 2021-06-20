@@ -55,11 +55,9 @@ func InterfaceCaseAdd(data *InterfaceCase) (err error) {
 
 // CaseList 查询接口列表
 func CaseList(data *InterfaceQueryDto) (InterCaseList []InterCaseList) {
-	tx := db.Table("interface_case").Debug()
+	tx := db.Debug().Table("interface_case")
 	tx = tx.Select("interface_case.*, interface.name as interface_name, interface.url, interface.method, environment.domain, user.user_name as created_user")
 	tx = tx.Where("interface_case.project_id = ? and interface_case.state = 1", data.ProjectId)
-	tx = tx.Joins("left join interface on interface.id = interface_case.interface_id" +
-		" left join environment on environment.id = interface_case.env_id left join user on interface_case.created_by = user.id")
 
 	if data.Name != "" {
 		tx = tx.Where("name = ?", data.Name)
@@ -78,6 +76,9 @@ func CaseList(data *InterfaceQueryDto) (InterCaseList []InterCaseList) {
 	if data.Page > 0 && data.PageSize > 0 {
 		tx = tx.Limit(data.PageSize).Offset((data.Page - 1) * data.PageSize)
 	}
+
+	tx = tx.Joins("left join interface on interface.id = interface_case.interface_id" +
+		" left join environment on environment.id = interface_case.env_id left join user on interface_case.created_by = user.id")
 	tx.Find(&InterCaseList).RecordNotFound()
 	return InterCaseList
 }
