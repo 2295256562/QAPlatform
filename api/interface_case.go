@@ -8,7 +8,11 @@ import (
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/tealeg/xlsx"
 	"github.com/unknwon/com"
+	"os"
+	"path"
+	"strconv"
 )
 
 func AddCase(c *gin.Context) {
@@ -280,22 +284,81 @@ func InterfaceCaseLog(c *gin.Context) {
 	return
 }
 
-// 导出测试用例
+// InterfaceExport 导出测试用例
 func InterfaceExport(c *gin.Context) {
-	fileName := "接口用例.xlsx"
-	file := excelize.NewFile()
+	titleList := []string{"ID", "用例名称", "接口名称", "环境名称", "请求路径", "请求方式", "请求Header", "请求query", "请求body", "body类型", "断言信息", "提取参数"}
+	var data []interface{}
 
-	index := file.NewSheet("Sheet1")
-	file.SetSheetRow("Sheet1", "A1", &[]interface{}{
-		"ID", "用例名称", "接口名称", "环境名称", "请求路径", "请求方式", "请求Header", "请求query", "请求body", "body类型",
-		"断言信息", "提取参数",
-	})
-	// 写入数据
+	ExportToExcel(c, titleList, data, "cases")
+}
 
-	file.SetActiveSheet(index)
-	// 写入字节数据
-	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Disposition", "attachment; filename="+fileName)
-	c.Header("Content-Transfer-Encoding", "binary")
+func InterfaceImport(c *gin.Context) {
+
+	var createdBy int
+	var ProjectId int
+
+	file, _ := c.FormFile("file")
+	dst := path.Join("../upload", file.Filename)
+	err := c.SaveUploadedFile(file, dst)
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint(err)))
+		return
+	}
+	xlsx, err := excelize.OpenFile(dst)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	// 获取excel中具体的列的值
+	rows, _ := xlsx.GetRows("Sheet" + "1")
+	for key, row := range rows {
+		InterfaceId, err := strconv.Atoi(row[8])
+		if err != nil {
+			utils.ResponseError(c, 500, errors.New(fmt.Sprint(err)))
+			return
+		}
+		EnvId, err := strconv.Atoi(row[9])
+		if err != nil {
+			utils.ResponseError(c, 500, errors.New(fmt.Sprint(err)))
+			return
+		}
+		// 去掉标题行
+		if key > 0 {
+			cases := model.InterfaceCase{Name: row[0], Type: row[1], Parameters: row[2], Headers: row[3], Query: row[4],
+				Asserts: row[5], Extract: row[6], Remark: row[7], InterfaceId: InterfaceId, EnvId: EnvId, CreatedBy: createdBy, ProjectId: ProjectId}
+			err := model.InterfaceCaseAdd(&cases)
+			if err != nil {
+				utils.ResponseError(c, 500, errors.New(fmt.Sprint(err)))
+				return
+			}
+		}
+	}
+	utils.ResponseSuccess(c, "导入成功")
+	return
+}
+
+func ExportToExcel(c *gin.Context, titleList []string, data []interface{}, fileName string) {
+	// 生成一个新的文件
+	file := xlsx.NewFile()
+	// 添加sheet页
+	sheet, _ := file.AddSheet("Sheet1")
+	// 插入表头
+	titleRow := sheet.AddRow()
+	for _, v := range titleList {
+		cell := titleRow.AddCell()
+		cell.Value = v
+		//居中显示
+		cell.GetStyle().Alignment.Horizontal = "center"
+		cell.GetStyle().Alignment.Vertical = "center"
+	}
+	// 插入内容
+	for _, v := range data {
+		row := sheet.AddRow()
+		row.WriteStruct(v, -1)
+	}
+
+	c.Writer.Header().Set("Content-Type", "application/octet-stream")
+	disposition := fmt.Sprintf("attachment; filename=%s.xlsx", fileName)
+	c.Writer.Header().Set("Content-Disposition", disposition)
 	_ = file.Write(c.Writer)
 }
