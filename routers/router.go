@@ -51,6 +51,7 @@ func InitRouter() {
 		V1.GET("/inter_all", api.Inters)
 		V1.GET("/inter", api.InterDetail)
 		V1.POST("/inter_edit", api.InterEdit)
+		V1.DELETE("/inter_del/:id", api.InterDel)
 
 		// 用例相关接口
 		V1.POST("/add_case", api.AddCase)
@@ -60,6 +61,7 @@ func InitRouter() {
 		V1.GET("/case_debug", api.InterfaceCaseDebug)
 		V1.GET("/case_log", api.InterfaceCaseLog)
 		V1.GET("/case_result", api.InterfaceCaseResult)
+		V1.GET("/case_export", api.InterfaceExport)
 	}
 	r.Run(utils.HttpPort)
 }

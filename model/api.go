@@ -168,6 +168,15 @@ func InterDetail(apiId int) (detail InterfaceDetail, err error) {
 // 修改接口
 func InterUpdate(data *InterfaceAdd) error {
 	tx := db.Begin()
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		tx.Commit()
+	}()
+
 	inter := &Interface{
 		Name:      data.Name,
 		Method:    data.Method,
@@ -211,12 +220,6 @@ func InterUpdate(data *InterfaceAdd) error {
 			return err
 		}
 	}
-
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-	tx.Commit()
 	return nil
 }
 

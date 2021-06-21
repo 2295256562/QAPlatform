@@ -21,7 +21,7 @@ func CreateProject(c *gin.Context) {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("输入参数有误")))
 		return
 	}
-	exist := model.CheckProjectExist(AddProject.Name)
+	exist := model.CheckProjectExist(0, AddProject.Name)
 	if exist {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("项目名称重复，请更换名称")))
 		return
@@ -89,7 +89,7 @@ func ProjectEdit(c *gin.Context) {
 		return
 	}
 
-	exist := model.CheckProjectExist(data.Name)
+	exist := model.CheckProjectExist(data.Id, data.Name)
 	if exist {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("项目名称重复，请更换名称")))
 		return

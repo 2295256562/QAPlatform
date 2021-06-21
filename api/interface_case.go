@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/unknwon/com"
 )
@@ -277,4 +278,24 @@ func InterfaceCaseLog(c *gin.Context) {
 	logs := model.QueryCaseLogByReportId(Id)
 	utils.ResponseSuccess(c, logs)
 	return
+}
+
+// 导出测试用例
+func InterfaceExport(c *gin.Context) {
+	fileName := "接口用例.xlsx"
+	file := excelize.NewFile()
+
+	index := file.NewSheet("Sheet1")
+	file.SetSheetRow("Sheet1", "A1", &[]interface{}{
+		"ID", "用例名称", "接口名称", "环境名称", "请求路径", "请求方式", "请求Header", "请求query", "请求body", "body类型",
+		"断言信息", "提取参数",
+	})
+	// 写入数据
+
+	file.SetActiveSheet(index)
+	// 写入字节数据
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	c.Header("Content-Transfer-Encoding", "binary")
+	_ = file.Write(c.Writer)
 }

@@ -42,10 +42,13 @@ type Projects struct {
 }
 
 // CheckProjectExist 校验项目名称是否存在
-func CheckProjectExist(name string) bool {
+func CheckProjectExist(id int, name string) bool {
 	var project Project
 	err = db.Select("id").Where("name = ?", name).First(&project).Error
 	if err != nil {
+		return false
+	}
+	if project.Id == id {
 		return false
 	}
 	if project.Id < 1 {
@@ -74,7 +77,7 @@ func CreateProject(data *AddProject) bool {
 }
 
 func GetProjectList(pageSize, pageNum int, maps interface{}) (projects []ProjectList, count int) {
-	err := db.Table("project").Select("project.*, user.user_name as created_user").Where(maps).Count(&count).Joins("left join user on user.id = project.created_by").Offset((pageNum - 1) * pageSize).Limit(pageSize).Find(&projects).Error
+	err := db.Table("project").Select("project.*, user.user_name as created_user").Order("created_time desc").Where(maps).Count(&count).Joins("left join user on user.id = project.created_by").Offset((pageNum - 1) * pageSize).Limit(pageSize).Find(&projects).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return
 	}

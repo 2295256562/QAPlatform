@@ -57,6 +57,8 @@ func InterfaceCaseAdd(data *InterfaceCase) (err error) {
 func CaseList(data *InterfaceQueryDto) (InterCaseList []InterCaseList) {
 	tx := db.Debug().Table("interface_case")
 	tx = tx.Select("interface_case.*, interface.name as interface_name, interface.url, interface.method, environment.domain, user.user_name as created_user")
+	tx = tx.Joins("left join interface on interface.id = interface_case.interface_id" +
+		" left join environment on environment.id = interface_case.env_id left join user on interface_case.created_by = user.id")
 	tx = tx.Where("interface_case.project_id = ? and interface_case.state = 1", data.ProjectId)
 
 	if data.Name != "" {
@@ -71,14 +73,12 @@ func CaseList(data *InterfaceQueryDto) (InterCaseList []InterCaseList) {
 	}
 
 	if data.CreatedBy > 0 {
-		tx.Where("created_by = ?", data.CreatedBy)
+		tx = tx.Where("created_by = ?", data.CreatedBy)
 	}
 	if data.Page > 0 && data.PageSize > 0 {
 		tx = tx.Limit(data.PageSize).Offset((data.Page - 1) * data.PageSize)
 	}
 
-	tx = tx.Joins("left join interface on interface.id = interface_case.interface_id" +
-		" left join environment on environment.id = interface_case.env_id left join user on interface_case.created_by = user.id")
 	tx.Find(&InterCaseList).RecordNotFound()
 	return InterCaseList
 }
@@ -103,8 +103,18 @@ func CaseInfo(id int) (apiCase utils.ApiCaseStr, err error) {
 	return
 }
 
+// 用例编辑
 func CaseEdit(data *InterfaceCase) (err error) {
 	err = db.Table("interface_case").Where("id = ?", data.Id).Updates(&data).Error
+	if err != nil {
+		return
+	}
+	return
+}
+
+// 查询此接口id是否用测试用例
+func QueryCountByInterfaceId(id int) (count int, err error) {
+	err = db.Debug().Table("interface_case").Select("id").Where("interface_id = ?", id).Count(&count).Error
 	if err != nil {
 		return
 	}

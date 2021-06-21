@@ -120,9 +120,25 @@ func InterDetail(c *gin.Context) {
 }
 
 func InterDel(c *gin.Context) {
-	id := com.StrTo(c.Query("id")).MustInt()
-	fmt.Println(id)
-	// TODO 查询当前接口下是否存在用例，如果有用例不可删除
+	id := com.StrTo(c.Param("id")).MustInt()
+
+	if id < 1 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("接口id不可为空")))
+		return
+	}
+	count, err := model.QueryCountByInterfaceId(id)
+	if err != nil {
+		log.Println("删除接口：", err)
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("删除接口出错")))
+		return
+	}
+
+	if count > 0 {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("接口下有测试用例，请您先删除此接口相关的用例")))
+		return
+	}
+	utils.ResponseSuccess(c, "删除成功")
+	return
 }
 
 func InterEdit(c *gin.Context) {
