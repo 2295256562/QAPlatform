@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/unknwon/com"
+	"log"
 )
 
 func AddInter(c *gin.Context) {
@@ -30,6 +31,7 @@ func AddInter(c *gin.Context) {
 	err = model.AddApi(data)
 
 	if err != nil {
+		log.Println(err)
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint("添加接口失败")))
 		return
 	}

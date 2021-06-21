@@ -61,6 +61,13 @@ type InterfaceBase struct {
 // AddApi 添加接口
 func AddApi(data *InterfaceAdd) error {
 	tx := db.Begin()
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		tx.Commit()
+	}()
 	inface := &Interface{
 		Name:      data.Name,
 		Method:    data.Method,
@@ -100,11 +107,6 @@ func AddApi(data *InterfaceAdd) error {
 		}
 	}
 
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-	tx.Commit()
 	return nil
 }
 
