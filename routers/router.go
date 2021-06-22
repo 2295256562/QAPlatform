@@ -32,6 +32,9 @@ func InitRouter() {
 		// 数据库管理相关接口
 		V1.POST("/add_database", api.AddDataBase)
 		V1.GET("/database_list", api.DataBaseList)
+		V1.DELETE("/database_del/:id", api.DataBaseDel)
+		V1.POST("/database_edit", api.DataBaseEdit)
+		V1.GET("/database_detail", api.DataBaseDetail)
 
 		// 模块接口
 		V1.GET("/module_list", api.ModelList)

@@ -34,12 +34,36 @@ func AddDataBase(data *DataBase) (err error) {
 	return
 }
 
+func EditDataBase(data *DataBase) (err error) {
+	err = db.Debug().Table("dataBase").Where("id = ?", data.Id).Updates(data).Error
+	if err != nil {
+		return
+	}
+	return
+}
+
+func DetailDataBase(id int) (detail DataBase, err error) {
+	err = db.Debug().Table("dataBase").Where("id = ?", id).Scan(&detail).Error
+	if err != nil {
+		return
+	}
+	return
+}
+
 func DataBaseLists(pageSize, pageNum, projectId int) (DataBaseList []DataBaseList, count int, err error) {
 	err = db.Table("`dataBase` as d").Select("d.*, u.user_name as created_user, e.name as env_name").
 		Joins("left join user u on d.created_by = u.id left join environment e on d.env_id = e.id where d.project_id = ? and d.state = 1", projectId).
 		Count(&count).Offset((pageNum - 1) * pageSize).Limit(pageSize).Find(&DataBaseList).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return
+	}
+	return
+}
+
+func DataBaseDelete(id int) (err error) {
+	err = db.Debug().Table("dataBase").Where("id = ?", id).Update("state", 0).Error
+	if err != nil {
+		return err
 	}
 	return
 }
