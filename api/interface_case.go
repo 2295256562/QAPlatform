@@ -286,10 +286,53 @@ func InterfaceCaseLog(c *gin.Context) {
 
 // InterfaceExport 导出测试用例
 func InterfaceExport(c *gin.Context) {
-	titleList := []string{"ID", "用例名称", "接口名称", "环境名称", "请求路径", "请求方式", "请求Header", "请求query", "请求body", "body类型", "断言信息", "提取参数"}
-	var data []interface{}
+	var data *model.InterfaceQueryDto
 
-	ExportToExcel(c, titleList, data, "cases")
+	err := c.ShouldBindQuery(&data)
+	if err != nil {
+		utils.ResponseError(c, 500, errors.New(fmt.Sprint("参数异常")))
+		return
+	}
+	list := model.CaseExport(data)
+
+	titleList := []string{"ID", "用例名称", "接口名称", "环境名称", "请求路径", "请求方式",
+		"请求Header", "请求query", "请求body", "body类型", "断言信息", "提取参数", "备注"}
+
+	// 生成一个新的文件
+	file := xlsx.NewFile()
+	// 添加sheet页
+	sheet, _ := file.AddSheet("Sheet1")
+	// 插入表头
+	titleRow := sheet.AddRow()
+	for _, v := range titleList {
+		cell := titleRow.AddCell()
+		cell.Value = v
+		//居中显示
+		cell.GetStyle().Alignment.Horizontal = "center"
+		cell.GetStyle().Alignment.Vertical = "center"
+	}
+	// 插入内容
+	for _, v := range list {
+		row := sheet.AddRow()
+		row.AddCell().SetInt(v.Id)
+		row.AddCell().SetString(v.Name)
+		row.AddCell().SetString(v.InterfaceName)
+		row.AddCell().SetString(v.EnvName)
+		row.AddCell().SetString(v.Domain + v.Url)
+		row.AddCell().SetString(v.Method)
+		row.AddCell().SetString(v.Headers)
+		row.AddCell().SetString(v.Query)
+		row.AddCell().SetString(v.Parameters)
+		row.AddCell().SetString(v.Type)
+		row.AddCell().SetString(v.Asserts)
+		row.AddCell().SetString(v.Extract)
+		row.AddCell().SetString(v.Remark)
+	}
+
+	c.Writer.Header().Set("Content-Type", "application/octet-stream")
+	disposition := fmt.Sprintf("attachment; filename=%s.xlsx", "cases")
+	c.Writer.Header().Set("Content-Disposition", disposition)
+	_ = file.Write(c.Writer)
 }
 
 func InterfaceImport(c *gin.Context) {
@@ -298,7 +341,7 @@ func InterfaceImport(c *gin.Context) {
 	var ProjectId int
 
 	file, _ := c.FormFile("file")
-	dst := path.Join("../upload", file.Filename)
+	dst := path.Join("./upload", file.Filename)
 	err := c.SaveUploadedFile(file, dst)
 	if err != nil {
 		utils.ResponseError(c, 500, errors.New(fmt.Sprint(err)))
@@ -312,6 +355,9 @@ func InterfaceImport(c *gin.Context) {
 	// 获取excel中具体的列的值
 	rows, _ := xlsx.GetRows("Sheet" + "1")
 	for key, row := range rows {
+		if key == 0 {
+			continue
+		}
 		InterfaceId, err := strconv.Atoi(row[8])
 		if err != nil {
 			utils.ResponseError(c, 500, errors.New(fmt.Sprint(err)))
@@ -337,7 +383,10 @@ func InterfaceImport(c *gin.Context) {
 	return
 }
 
-func ExportToExcel(c *gin.Context, titleList []string, data []interface{}, fileName string) {
+func InterfaceDownloadTemplate(c *gin.Context) {
+	titleList := []string{"用例名称", "body类型", "body参数", "请求header", "请求query",
+		"断言信息", "参数提取", "备注", "接口id", "环境id", "创建人员", "项目id"}
+
 	// 生成一个新的文件
 	file := xlsx.NewFile()
 	// 添加sheet页
@@ -351,14 +400,9 @@ func ExportToExcel(c *gin.Context, titleList []string, data []interface{}, fileN
 		cell.GetStyle().Alignment.Horizontal = "center"
 		cell.GetStyle().Alignment.Vertical = "center"
 	}
-	// 插入内容
-	for _, v := range data {
-		row := sheet.AddRow()
-		row.WriteStruct(v, -1)
-	}
 
 	c.Writer.Header().Set("Content-Type", "application/octet-stream")
-	disposition := fmt.Sprintf("attachment; filename=%s.xlsx", fileName)
+	disposition := fmt.Sprintf("attachment; filename=%s.xlsx", "cases")
 	c.Writer.Header().Set("Content-Disposition", disposition)
 	_ = file.Write(c.Writer)
 }

@@ -29,6 +29,10 @@ func InitRouter() {
 		V1.DELETE("/project/:id", api.ProjectDel)
 		V1.GET("/projects", api.Projects)
 
+		// 数据库管理相关接口
+		V1.POST("/add_database", api.AddDataBase)
+		V1.GET("/database_list", api.DataBaseList)
+
 		// 模块接口
 		V1.GET("/module_list", api.ModelList)
 		V1.POST("/module_add", api.AddModule)
@@ -63,6 +67,7 @@ func InitRouter() {
 		V1.GET("/case_result", api.InterfaceCaseResult)
 		V1.GET("/case_export", api.InterfaceExport)
 		V1.POST("/case_import", api.InterfaceImport)
+		V1.GET("/case_down_template", api.InterfaceDownloadTemplate)
 	}
 	r.Run(utils.HttpPort)
 }

@@ -139,7 +139,6 @@ func InterList(pageSize, pageNum, projectId int) (list []InterfaceList, count in
 		" ON u.id =i.created_by LEFT JOIN project p ON p.id = i.project_id LEFT JOIN module m ON m.id = i.module_id WHERE "+
 		"i.state = 1 and i.project_id = ? GROUP BY i.id DESC", projectId).Scan(&list).Error
 	db.Table("interface").Where("state = 1 and project_id = ?", projectId).Count(&count)
-	//err = db.Table("interface").Where("module_id = ? and state = 1", projectId).Count(&count).Scan(&list).Error
 	if err != nil {
 		return nil, 0, err
 	}

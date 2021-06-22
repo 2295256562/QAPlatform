@@ -45,6 +45,24 @@ type InterCaseList struct {
 	CreatedUser   string `json:"created_user"`
 }
 
+type InterCaseExport struct {
+	Id            int    `json:"id"`
+	Domain        string `json:"domain"`
+	Url           string `json:"url"`
+	Method        string `json:"method"`
+	Name          string `json:"name"`
+	Type          string `json:"type"`
+	Parameters    string `json:"parameters"`
+	Headers       string `json:"headers"`
+	Query         string `json:"query"`
+	Asserts       string `json:"asserts"`
+	Extract       string `json:"extract"`
+	EnvName       string `json:"env_name"`
+	InterfaceName string `json:"interface_name"`
+	ProjectName   string `json:"project_name"`
+	Remark        string `json:"remark"`
+}
+
 // InterfaceCaseAdd 添加接口测试用例
 func InterfaceCaseAdd(data *InterfaceCase) (err error) {
 	if db.Table("interface_case").Create(&data).Error != nil {
@@ -81,6 +99,28 @@ func CaseList(data *InterfaceQueryDto) (InterCaseList []InterCaseList) {
 
 	tx.Find(&InterCaseList).RecordNotFound()
 	return InterCaseList
+}
+
+func CaseExport(data *InterfaceQueryDto) (cases []InterCaseExport) {
+	tx := db.Debug().Table("interface_case as c")
+	tx = tx.Select("c.id, e.domain, i.url, i.method, c.name, c.type, c.parameters, c.headers, c.query, c.asserts, c.extract, e.name as env_name, i.name as interface_name, p.name as project_name, c.remark")
+	tx = tx.Joins("left join environment e on c.env_id = e.id left join interface i on c.interface_id = i.id left join project p on c.project_id = p.id")
+	tx = tx.Where("c.project_id = ? and c.state = 1", data.ProjectId)
+
+	if data.Name != "" {
+		tx = tx.Where("name = ?", data.Name)
+	}
+	if data.EnvId > 0 {
+		tx = tx.Where("env_id = ?", data.EnvId)
+	}
+	if data.InterfaceId > 0 {
+		tx = tx.Where("interface_id = ?", data.InterfaceId)
+	}
+	if data.CreatedBy > 0 {
+		tx = tx.Where("created_by = ?", data.CreatedBy)
+	}
+	tx.Find(&cases).RecordNotFound()
+	return
 }
 
 // CaseDetail 用例详情
