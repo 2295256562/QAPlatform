@@ -68,7 +68,7 @@ func AddApi(data *InterfaceAdd) error {
 		}
 		tx.Commit()
 	}()
-	inface := &Interface{
+	inface := Interface{
 		Name:      data.Name,
 		Method:    data.Method,
 		Url:       data.Url,
@@ -76,7 +76,7 @@ func AddApi(data *InterfaceAdd) error {
 		ProjectId: data.ProjectId,
 		ModuleId:  data.ModuleId,
 	}
-	if err := tx.Table("interface").Create(inface).Error; err != nil {
+	if err := tx.Table("interface").Create(&inface).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
